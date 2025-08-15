@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital Sticky Notes Board</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* ...[styles unchanged, omitted for brevity]... */
+        /* Paste your full CSS here, unchanged */
+        :root {
+            --bg-color: #f0f2f5;
+            --board-color: #f8f9fa;
+            --header-color: #ffffff;
+            --text-color: #1a1a1a;
+            --note-shadow: rgba(0, 0, 0, 0.1);
+            --note-yellow: #f9f7b3;
+            --note-green: #c0f0c2;
+            --note-blue: #c0e8f5;
+            --note-pink: #f8d0e3;
+            --note-purple: #e0d4f5;
+            --border-color: #e0e0e0;
+            --button-bg: #4a6cf7;
+            --button-hover: #3a5ce5;
+            --completed-bg: #f0f5ff;
+            --archive-bg: #ffffff;
+            --tab-active: #4a6cf7;
+            --tab-inactive: #e0e0e0;
+        }
+        .dark-mode {
+            --bg-color: #121826;
+            --board-color: #1e293b;
+            --header-color: #1a2437;
+            --text-color: #e2e8f0;
+            --note-shadow: rgba(0, 0, 0, 0.3);
+            --note-yellow: #3d3805;
+            --note-green: #0d300d;
+            --note-blue: #0a2c3d;
+            --note-pink: #3a1421;
+            --note-purple: #1e0f3d;
+            --border-color: #2d3748;
+            --button-bg: #6366f1;
+            --button-hover: #4f46e5;
+            --completed-bg: #1c2a4f;
+            --archive-bg: #1a2437;
+            --tab-active: #6366f1;
+            --tab-inactive: #2d3748;
+        }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            transition: background-color 0.3s, color 0.3s;
+            height: 100vh;
+            overflow: hidden;
+        }
+        .header {
+            background-color: var(--header-color);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px var(--note-shadow);
+            z-index: 100;
+            position: relative;
+        }
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .logo h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            background: linear-gradient(90deg, #4a6cf7, #6366f1);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        .logo i {
+            font-size: 1.8rem;
+            color: #4a6cf7;
+        }
+        .controls {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            position: relative;
+        }
+        .btn {
+            background-color: var(--button-bg);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .btn:hover {
+            background-color: var(--button-hover);
+            transform: translateY(-2px);
+        }
+        .btn.completed-btn {
+            background-color: #10b981;
+        }
+        .btn.completed-btn:hover {
+            background-color: #059669;
+        }
+        .theme-toggle {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-color);
+            padding: 8px;
+            border-radius: 50%;
+            transition: all 0.3s;
+        }
+        .theme-toggle:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        .board {
+            background-color: var(--board-color);
+            height: calc(100vh - 80px);
+            position: relative;
+            overflow: hidden;
+            background-image: 
+                linear-gradient(var(--border-color) 1px, transparent 1px),
+                linear-gradient(90deg, var(--border-color) 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+        .note {
+            position: absolute;
+            min-width: 200px;
+            min-height: 200px;
+            max-width: 400px;
+            max-height: 400px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px var(--note-shadow);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            resize: both;
+            transition: box-shadow 0.3s, transform 0.3s;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+        .note:hover {
+            box-shadow: 0 6px 20px var(--note-shadow);
+            transform: translateY(-2px);
+        }
+        .note-header {
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: move;
+            font-weight: 600;
+        }
+        .note-actions {
+            display: flex;
+            gap: 8px;
+        }
+        .note-action {
+            background: none;
+            border: none;
+            color: inherit;
+            cursor: pointer;
+            font-size: 14px;
+            padding: 4px;
+            opacity: 0.7;
+            transition: opacity 0.2s, transform 0.2s;
+        }
+        .note-action:hover {
+            opacity: 1;
+            transform: scale(1.1);
+        }
+        .note-content {
+            flex: 1;
+            padding: 12px 16px;
+            outline: none;
+            border: none;
+            background: transparent;
+            color: inherit;
+            resize: none;
+            font-size: 16px;
+            line-height: 1.5;
+            overflow-y: auto;
+        }
+        .note-content:focus {
+            background: rgba(255, 255, 255, 0.05);
+        }
+        .note-color {
+            height: 6px;
+            background-color: var(--note-yellow);
+        }
+        .note.yellow .note-color {
+            background-color: #ffd700;
+        }
+        .note.green .note-color {
+            background-color: #4caf50;
+        }
+        .note.blue .note-color {
+            background-color: #2196f3;
+        }
+        .note.pink .note-color {
+            background-color: #e91e63;
+        }
+        .note.purple .note-color {
+            background-color: #9c27b0;
+        }
+        .note.yellow {
+            background-color: var(--note-yellow);
+        }
+        .note.green {
+            background-color: var(--note-green);
+        }
+        .note.blue {
+            background-color: var(--note-blue);
+        }
+        .note.pink {
+            background-color: var(--note-pink);
+        }
+        .note.purple {
+            background-color: var(--note-purple);
+        }
+        .note-placeholder {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: #6b7280;
+            max-width: 400px;
+        }
+        .note-placeholder i {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
+        .note-placeholder p {
+            font-size: 1.2rem;
+            margin-bottom: 30px;
+        }
+        .color-picker {
+            display: flex;
+            gap: 8px;
+        }
+        .color-option {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: transform 0.2s;
+        }
+        .color-option:hover {
+            transform: scale(1.1);
+        }
+        .color-option.active {
+            border-color: var(--text-color);
+            transform: scale(1.1);
+        }
+        .color-yellow { background-color: #ffd700; }
+        .color-green { background-color: #4caf50; }
+        .color-blue { background-color: #2196f3; }
+        .color-pink { background-color: #e91e63; }
+        .color-purple { background-color: #9c27b0; }
+        footer {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            text-align: center;
+            padding: 10px;
+            font-size: 0.9rem;
+            color: #6b7280;
+        }
+        .archive-dropdown {
+            position: relative;
+            display: inline-block;
+        }
+        .archive-btn {
+            background-color: var(--button-bg);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .archive-btn:hover {
+            background-color: var(--button-hover);
+            transform: translateY(-2px);
+        }
+        .archive-content {
+            display: none;
+            position: absolute;
+            background-color: var(--archive-bg);
+            min-width: 300px;
+            max-width: 400px;
+            max-height: 500px;
+            overflow-y: auto;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+            z-index: 1000;
+            border-radius: 8px;
+            top: 120%;
+            right: 0;
+            padding: 15px;
+            border: 1px solid var(--border-color);
+        }
+        .archive-content.show {
+            display: block;
+        }
+        .archive-tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 10px;
+        }
+        .archive-tab {
+            padding: 10px 15px;
+            cursor: pointer;
+            background: none;
+            border: none;
+            color: var(--text-color);
+            font-weight: 600;
+            flex: 1;
+            text-align: center;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+        }
+        .archive-tab.active {
+            border-bottom: 3px solid var(--tab-active);
+            color: var(--tab-active);
+        }
+        .archive-tab:not(.active):hover {
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+        .archive-list {
+            max-height: 400px;
+            overflow-y: auto;
+            padding: 5px;
+        }
+        .archive-item {
+            padding: 12px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            transition: background-color 0.2s;
+        }
+        .archive-item:last-child {
+            border-bottom: none;
+        }
+        .archive-item:hover {
+            background-color: rgba(255, 255, 255, 0.05);
+            border-radius: 4px;
+        }
+        .archive-content-text {
+            font-size: 14px;
+            line-height: 1.4;
+            word-break: break-word;
+        }
+        .archive-meta {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: #6b7280;
+        }
+        .archive-type {
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 10px;
+            text-transform: uppercase;
+        }
+        .archive-type.completed {
+            background-color: rgba(16, 185, 129, 0.2);
+            color: #10b981;
+        }
+        .archive-type.deleted {
+            background-color: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+        }
+        .archive-empty {
+            text-align: center;
+            padding: 20px;
+            color: #6b7280;
+            font-style: italic;
+        }
+        .archive-actions {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 15px;
+            padding-top: 10px;
+            border-top: 1px solid var(--border-color);
+        }
+        .clear-archive-btn {
+            background: none;
+            border: none;
+            color: #ef4444;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            padding: 5px 10px;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+        }
+        .clear-archive-btn:hover {
+            background-color: rgba(239, 68, 68, 0.1);
+        }
+        .archive-count {
+            background-color: #ef4444;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            margin-left: 5px;
+        }
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                gap: 16px;
+                padding: 1rem;
+            }
+            .logo h1 {
+                font-size: 1.5rem;
+            }
+            .btn span {
+                display: none;
+            }
+            .btn i {
+                margin-right: 0;
+            }
+            .archive-content {
+                min-width: 280px;
+                max-width: 300px;
+                right: -50%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="logo">
+            <i class="fas fa-sticky-note"></i>
+            <h1>Digital Sticky Notes</h1>
+        </div>
+        <div class="controls">
+            <button class="btn" id="addNote">
+                <i class="fas fa-plus"></i>
+                <span>Add Note</span>
+            </button>
+            <div class="color-picker">
+                <div class="color-option color-yellow active" data-color="yellow"></div>
+                <div class="color-option color-green" data-color="green"></div>
+                <div class="color-option color-blue" data-color="blue"></div>
+                <div class="color-option color-pink" data-color="pink"></div>
+                <div class="color-option color-purple" data-color="purple"></div>
+            </div>
+            <div class="archive-dropdown">
+                <button class="archive-btn" id="archiveBtn">
+                    <i class="fas fa-archive"></i>
+                    <span>Archive</span>
+                    <span id="archiveCount" class="archive-count">0</span>
+                </button>
+                <div class="archive-content" id="archiveContent">
+                    <div class="archive-tabs">
+                        <button class="archive-tab active" data-tab="completed">Completed</button>
+                        <button class="archive-tab" data-tab="deleted">Deleted</button>
+                    </div>
+                    <div class="archive-list" id="archiveList">
+                        <!-- Archive items will be rendered here -->
+                    </div>
+                    <div class="archive-empty" id="archiveEmpty">
+                        <i class="fas fa-inbox" style="font-size: 3rem; margin-bottom: 10px; opacity: 0.3;"></i>
+                        <p>Your archive is empty</p>
+                    </div>
+                    <div class="archive-actions">
+                        <button class="clear-archive-btn" id="clearArchive">
+                            <i class="fas fa-trash-alt"></i> Clear Archive
+                        </button>
+                        <span id="archiveStats">0 items</span>
+                    </div>
+                </div>
+            </div>
+            <button class="theme-toggle" id="themeToggle">
+                <i class="fas fa-moon"></i>
+            </button>
+        </div>
+    </header>
+    <main class="board" id="board">
+        <div class="note-placeholder" id="placeholder">
+            <i class="fas fa-sticky-note"></i>
+            <p>Your board is empty. Click "Add Note" to get started!</p>
+        </div>
+    </main>
+    <footer>
+        <p>Apex Sticky Notes Board &copy; 2025 | Drag, resize, and type to add notes. Archived notes are saved automatically.</p>
+    </footer>
+    <script>
+        // Initialize variables
+        let currentColor = 'yellow';
+        let notes = JSON.parse(localStorage.getItem('stickyNotes')) || [];
+        let completedNotes = JSON.parse(localStorage.getItem('completedNotes')) || [];
+        let deletedNotes = JSON.parse(localStorage.getItem('deletedNotes')) || [];
+        let isDragging = false;
+        let currentNote = null;
+        let offsetX, offsetY;
+        let currentArchiveTab = 'completed';
+
+        // DOM Elements
+        const board = document.getElementById('board');
+        const addNoteBtn = document.getElementById('addNote');
+        const themeToggle = document.getElementById('themeToggle');
+        const colorOptions = document.querySelectorAll('.color-option');
+        const placeholder = document.getElementById('placeholder');
+        const archiveBtn = document.getElementById('archiveBtn');
+        const archiveContent = document.getElementById('archiveContent');
+        const archiveList = document.getElementById('archiveList');
+        const archiveEmpty = document.getElementById('archiveEmpty');
+        const archiveTabs = document.querySelectorAll('.archive-tab');
+        const archiveCount = document.getElementById('archiveCount');
+        const archiveStats = document.getElementById('archiveStats');
+        const clearArchiveBtn = document.getElementById('clearArchive');
+
+        // Theme toggle functionality
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('dark-mode');
+            const isDarkMode = document.body.classList.contains('dark-mode');
+            localStorage.setItem('darkMode', isDarkMode);
+            themeToggle.innerHTML = isDarkMode 
+                ? '<i class="fas fa-sun"></i>' 
+                : '<i class="fas fa-moon"></i>';
+        });
+
+        // Apply saved theme on page load
+        if (localStorage.getItem('darkMode') === 'true') {
+            document.body.classList.add('dark-mode');
+            themeToggle.innerHTML = '<i class="fas fa-sun"></i>';
+        }
+
+        // Color picker functionality
+        colorOptions.forEach(option => {
+            option.addEventListener('click', () => {
+                colorOptions.forEach(opt => opt.classList.remove('active'));
+                option.classList.add('active');
+                currentColor = option.dataset.color;
+            });
+        });
+
+        // Add new note
+        addNoteBtn.addEventListener('click', () => {
+            createNote();
+        });
+
+        // Archive dropdown functionality
+        archiveBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            archiveContent.classList.toggle('show');
+            updateArchiveUI();
+        });
+
+        // Close archive when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!archiveContent.contains(e.target) && !archiveBtn.contains(e.target)) {
+                archiveContent.classList.remove('show');
+            }
+        });
+
+        // Archive tab switching
+        archiveTabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                archiveTabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                currentArchiveTab = tab.dataset.tab;
+                updateArchiveUI();
+            });
+        });
+
+        // Clear archive functionality
+        clearArchiveBtn.addEventListener('click', () => {
+            if (confirm('Are you sure you want to clear the entire archive? This cannot be undone.')) {
+                if (currentArchiveTab === 'completed') {
+                    completedNotes = [];
+                    localStorage.setItem('completedNotes', JSON.stringify(completedNotes));
+                } else {
+                    deletedNotes = [];
+                    localStorage.setItem('deletedNotes', JSON.stringify(deletedNotes));
+                }
+                updateArchiveUI();
+                updateArchiveCounter();
+            }
+        });
+
+        // Create a new note element
+        function createNote(content = '', x = 100, y = 100, width = 250, height = 250, color = currentColor) {
+            placeholder.style.display = 'none';
+            const note = document.createElement('div');
+            note.className = `note ${color}`;
+            note.style.width = `${width}px`;
+            note.style.height = `${height}px`;
+            note.style.left = `${x}px`;
+            note.style.top = `${y}px`;
+            note.innerHTML = `
+                <div class="note-color"></div>
+                <div class="note-header">
+                    <span>Note #${notes.length + 1}</span>
+                    <div class="note-actions">
+                        <button class="note-action" title="Complete note">
+                            <i class="fas fa-check"></i>
+                        </button>
+                        <button class="note-action" title="Delete note">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+                <textarea class="note-content" placeholder="Type your note here...">${content}</textarea>
+            `;
+            board.appendChild(note);
+            const header = note.querySelector('.note-header');
+            header.addEventListener('mousedown', startDrag);
+            note.addEventListener('mousedown', bringToFront);
+            const completeBtn = note.querySelector('.note-action:first-child');
+            completeBtn.addEventListener('click', () => {
+                completeNote(note);
+            });
+            const deleteBtn = note.querySelector('.note-action:last-child');
+            deleteBtn.addEventListener('click', () => {
+                deleteNote(note);
+            });
+            const textarea = note.querySelector('.note-content');
+            textarea.addEventListener('input', saveNotes);
+            const id = Date.now().toString();
+            note.dataset.id = id;
+            notes.push({
+                id,
+                content,
+                x,
+                y,
+                width,
+                height,
+                color
+            });
+            saveNotes();
+            return note;
+        }
+
+        // Complete note functionality (ignore empty notes)
+        function completeNote(note) {
+            const content = note.querySelector('.note-content').value.trim();
+            if (!content) {
+                // Do not count empty notes as completed
+                note.remove();
+                const noteId = note.dataset.id;
+                notes = notes.filter(note => note.id !== noteId);
+                saveNotes();
+                showPlaceholderIfEmpty();
+                return;
+            }
+            const completionDate = new Date();
+            completedNotes.unshift({
+                content,
+                date: completionDate.toISOString(),
+                type: 'completed'
+            });
+            localStorage.setItem('completedNotes', JSON.stringify(completedNotes));
+            note.remove();
+            const noteId = note.dataset.id;
+            notes = notes.filter(note => note.id !== noteId);
+            saveNotes();
+            showPlaceholderIfEmpty();
+            updateArchiveCounter();
+            animateNoteCompletion(note);
+        }
+
+        // Delete note functionality (do not count deleted notes)
+        function deleteNote(note) {
+            const content = note.querySelector('.note-content').value.trim();
+            if (!content) {
+                // Just remove empty notes, don't add to deletedNotes
+                note.remove();
+                const noteId = note.dataset.id;
+                notes = notes.filter(note => note.id !== noteId);
+                saveNotes();
+                showPlaceholderIfEmpty();
+                return;
+            }
+            const deletionDate = new Date();
+            deletedNotes.unshift({
+                content,
+                date: deletionDate.toISOString(),
+                type: 'deleted'
+            });
+            localStorage.setItem('deletedNotes', JSON.stringify(deletedNotes));
+            note.remove();
+            const noteId = note.dataset.id;
+            notes = notes.filter(note => note.id !== noteId);
+            saveNotes();
+            showPlaceholderIfEmpty();
+            updateArchiveCounter();
+        }
+
+        // Animation for completing a note
+        function animateNoteCompletion(note) {
+            const completeEffect = document.createElement('div');
+            completeEffect.style.position = 'fixed';
+            completeEffect.style.left = note.getBoundingClientRect().left + 'px';
+            completeEffect.style.top = note.getBoundingClientRect().top + 'px';
+            completeEffect.style.width = note.offsetWidth + 'px';
+            completeEffect.style.height = note.offsetHeight + 'px';
+            completeEffect.style.backgroundColor = '#10b981';
+            completeEffect.style.borderRadius = '8px';
+            completeEffect.style.opacity = '0.7';
+            completeEffect.style.zIndex = '10000';
+            completeEffect.style.pointerEvents = 'none';
+            completeEffect.style.transition = 'all 0.5s ease';
+            document.body.appendChild(completeEffect);
+            setTimeout(() => {
+                completeEffect.style.transform = 'scale(1.2)';
+                completeEffect.style.opacity = '0';
+            }, 50);
+            setTimeout(() => {
+                document.body.removeChild(completeEffect);
+            }, 550);
+        }
+
+        // Update archive UI
+        function updateArchiveUI() {
+            const items = currentArchiveTab === 'completed' ? completedNotes : deletedNotes;
+            archiveEmpty.style.display = items.length ? 'none' : 'block';
+            archiveList.style.display = items.length ? 'block' : 'none';
+            archiveList.innerHTML = '';
+            items.forEach((item, index) => {
+                const archiveItem = document.createElement('div');
+                archiveItem.className = 'archive-item';
+                const date = new Date(item.date);
+                const formattedDate = date.toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+                archiveItem.innerHTML = `
+                    <div class="archive-content-text">${item.content}</div>
+                    <div class="archive-meta">
+                        <div class="archive-type ${item.type}">${item.type}</div>
+                        <div>${formattedDate}</div>
+                    </div>
+                `;
+                archiveList.appendChild(archiveItem);
+            });
+            archiveStats.textContent = `${items.length} ${items.length === 1 ? 'item' : 'items'}`;
+        }
+
+        // Update archive counter (only count completed notes)
+        function updateArchiveCounter() {
+            archiveCount.textContent = completedNotes.length;
+            archiveCount.style.display = completedNotes.length ? 'inline' : 'none';
+        }
+
+        // Bring note to front when clicked
+        function bringToFront(e) {
+            if (e.target.classList.contains('note-action') || 
+                e.target.classList.contains('note-content')) return;
+            const notesEls = document.querySelectorAll('.note');
+            let maxZ = 0;
+            notesEls.forEach(note => {
+                const z = parseInt(note.style.zIndex) || 0;
+                if (z > maxZ) maxZ = z;
+                note.style.zIndex = 0;
+            });
+            this.style.zIndex = maxZ + 1;
+        }
+
+        // Drag functionality
+        function startDrag(e) {
+            if (e.button !== 0) return;
+            isDragging = true;
+            currentNote = this.parentElement;
+            offsetX = e.clientX - currentNote.getBoundingClientRect().left;
+            offsetY = e.clientY - currentNote.getBoundingClientRect().top;
+            currentNote.style.zIndex = 1000;
+            document.addEventListener('mousemove', dragNote);
+            document.addEventListener('mouseup', stopDrag);
+        }
+        function dragNote(e) {
+            if (!isDragging) return;
+            const boardRect = board.getBoundingClientRect();
+            let x = e.clientX - boardRect.left - offsetX;
+            let y = e.clientY - boardRect.top - offsetY;
+            x = Math.max(0, Math.min(x, boardRect.width - currentNote.offsetWidth));
+            y = Math.max(0, Math.min(y, boardRect.height - currentNote.offsetHeight));
+            currentNote.style.left = `${x}px`;
+            currentNote.style.top = `${y}px`;
+        }
+        function stopDrag() {
+            isDragging = false;
+            document.removeEventListener('mousemove', dragNote);
+            document.removeEventListener('mouseup', stopDrag);
+            const noteId = currentNote.dataset.id;
+            const noteIndex = notes.findIndex(note => note.id === noteId);
+            if (noteIndex !== -1) {
+                notes[noteIndex].x = parseInt(currentNote.style.left);
+                notes[noteIndex].y = parseInt(currentNote.style.top);
+                saveNotes();
+            }
+            currentNote = null;
+        }
+
+        // Save notes to localStorage
+        function saveNotes() {
+            const notesToSave = [];
+            document.querySelectorAll('.note').forEach(note => {
+                const content = note.querySelector('.note-content').value;
+                notesToSave.push({
+                    id: note.dataset.id,
+                    content,
+                    x: parseInt(note.style.left),
+                    y: parseInt(note.style.top),
+                    width: parseInt(note.style.width),
+                    height: parseInt(note.style.height),
+                    color: Array.from(note.classList).find(cls => 
+                        ['yellow', 'green', 'blue', 'pink', 'purple'].includes(cls)
+                    )
+                });
+            });
+            localStorage.setItem('stickyNotes', JSON.stringify(notesToSave));
+            notes = notesToSave;
+        }
+
+        // Load notes from localStorage
+        function loadNotes() {
+            const savedNotes = JSON.parse(localStorage.getItem('stickyNotes')) || [];
+            completedNotes = JSON.parse(localStorage.getItem('completedNotes')) || [];
+            deletedNotes = JSON.parse(localStorage.getItem('deletedNotes')) || [];
+            if (savedNotes.length > 0) {
+                placeholder.style.display = 'none';
+                savedNotes.forEach(note => {
+                    createNote(
+                        note.content, 
+                        note.x, 
+                        note.y, 
+                        note.width, 
+                        note.height, 
+                        note.color
+                    );
+                });
+            }
+            updateArchiveCounter();
+        }
+
+        // Show placeholder if no notes exist
+        function showPlaceholderIfEmpty() {
+            if (document.querySelectorAll('.note').length === 0) {
+                placeholder.style.display = 'block';
+            }
+        }
+
+        // Initialize the app
+        function init() {
+            loadNotes();
+            if (notes.length === 0) {
+                createNote(
+                    "Welcome to your Digital Sticky Notes Board!\n\n" +
+                    "• Drag notes by the top bar\n" +
+                    "• Resize by dragging the bottom-right corner\n" +
+                    "• Click ✓ to complete a task\n" +
+                    "• Click 🗑️ to delete a note\n" +
+                    "• Change colors using the color picker\n" +
+                    "• Click the archive button to view completed/deleted notes\n" +
+                    "• Click the moon/sun icon to toggle dark mode\n\n" +
+                    "Click the '+' button to add more notes!",
+                    50, 50, 300, 300
+                );
+            }
+        }
+
+        // Start the application
+        init();
+    </script>
+</body>
+</html>
